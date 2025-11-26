@@ -7,7 +7,9 @@ import java.awt.image.BufferedImage;
 
 /**
  * linux 连线器，基于xdotool 实现
- * 使用方法：点击连线按钮，再点击选择目标平台，然后等待连线识别成功即可
+ * 使用方法：点击连线按钮，3秒内再点击目标平台，然后等待连线识别成功即可
+ * 注意：原来使用 xdotool selectwindow 在Wayland上不可用，因为Wayland不支持全局鼠标捕获
+ * 现改为等待3秒后获取当前活动窗口的方式（与macOS实现类似）
  */
 public class LinuxGraphLinker extends AbstractGraphLinker {
 
@@ -19,8 +21,10 @@ public class LinuxGraphLinker extends AbstractGraphLinker {
 
     @Override
     public void getTargetWindowId() {
-        this.windowId = ShellUtils.exec("xdotool selectwindow");
-        ShellUtils.exec("xdotool windowactivate --sync " + this.windowId);
+        // 等待3秒，让用户点击目标窗口
+        sleep(3000);
+        // 获取当前活动窗口（兼容Wayland和X11）
+        this.windowId = ShellUtils.exec("xdotool getactivewindow").trim();
 
         scan();
     }
